@@ -7,9 +7,9 @@ What is DIGERA?
 
 **Drug-Induced Gene Expression Ranking Analysis (DIGERA)** is a Lasso-based ensemble framework utilizing LINCS L1000 data to predict rankings of drug-induced gene expression by combining Graph Convolutional Network, Graph-based Transformer, Transformer Encoder, LSTM, and Random Forest Regressors.
 
-The Library of Integrated Network-Based Cellular Signatures ([LINCS](https://lincsportal.ccs.miami.edu/datasets/)) provide a comprehensive repository of cellular response patterns to various perturbagens and introduce the L1000 assay, which measures the expression of 978 landmark genes for high-throughput profiling.
+The Library of Integrated Network-Based Cellular Signatures ([LINCS](https://lincsportal.ccs.miami.edu/datasets/)) provide a comprehensive repository of cellular response patterns to various perturbagens and introduce the [L1000](https://www.sciencedirect.com/science/article/pii/S0092867417313090) assay, which measures the expression of 978 landmark genes for high-throughput profiling.
 
-We used the Bayesian-based curated level 5 dataset of [Qiu et al.](https://academic.oup.com/bioinformatics/article/36/9/2787/5719019) containing differential gene expression signatures and selected profiles from the eight largest cell lines (A375, A549, HA1E, HEPG2, HT29, MCF7, PC3, and VCAP) at concentrations of 5 and 10 μM, with exposure times of 6 and 24 hours.
+We used [the Bayesian-based curated level 5 dataset](https://academic.oup.com/bioinformatics/article/36/9/2787/5719019) containing differential gene expression signatures and selected profiles from the eight largest cell lines (A375, A549, HA1E, HEPG2, HT29, MCF7, PC3, and VCAP) at concentrations of 5 and 10 μM, with exposure times of 6 and 24 hours.
 
 Contact Person
 --------------
