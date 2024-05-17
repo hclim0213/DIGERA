@@ -1,6 +1,6 @@
 Drug-Induced Gene Expression Ranking Analysis (DIGERA)
 =======================
-(https://github.com/hclim0213/DIGERA/assets/48709737/e3ddda16-575f-4ffb-80f5-863b7dfa73b4)
+<img src="https://github.com/hclim0213/DIGERA/assets/48709737/e3ddda16-575f-4ffb-80f5-863b7dfa73b4")
 
 What is DIGERA?
 ----------------
