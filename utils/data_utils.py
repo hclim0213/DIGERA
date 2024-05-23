@@ -43,7 +43,7 @@ class CustomDataset(Dataset):
         return x, meta, y
 
 """
-CIGER PART 
+Graph Transformer PART
 """
 
 class DataPredict(object):

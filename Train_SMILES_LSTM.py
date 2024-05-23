@@ -57,7 +57,7 @@ if __name__=="__main__":
     meta_file = args.meta_file
     target_file = args.target_file 
 
-    model_name = 'SMILES_LSTM'
+    model_name = 'LSTM'
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     

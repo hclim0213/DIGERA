@@ -4,8 +4,8 @@ import pandas as pd
 
 import torch
 from torch.utils.data import DataLoader
-from model import data_selection, CustomDataset, Transformer, LSTMModel, Graph_Transformer, LinearRegression_3d
-from utils import DataReader
+from model import Transformer, LSTMModel, Graph_Transformer, LinearRegression_3d, CustomRandomForestRegressor
+from utils import DataReader, data_selection, CustomDataset
 from utils import custom_make_rank, custom_score, custom_top_k_score
 
 import pickle
@@ -25,13 +25,13 @@ config={'transformer_d_model': 64,
 
 train_index_dict = {'MCF7':[], 'HA1E':[], 'A375':[], 
              'HEPG2':[], 'A549':[], 'HT29':[], 'VCAP':[], 
-             'PC3':[], 'group1':[], 'group2':[], 'group3':[]}
+             'PC3':[], 'three_cells':[], 'eight_cells':[]}
 
 test_index_dict = {'MCF7':[], 'HA1E':[], 'A375':[], 
              'HEPG2':[], 'A549':[], 'HT29':[], 'VCAP':[], 
-             'PC3':[], 'group1':[], 'group2':[], 'group3':[]}
+             'PC3':[], 'three_cells':[], 'eight_cells':[]}
 
-data_v1_X = pd.read_csv('/root/data/raw/Bayesian_phase2_L5_All_240119_v2.tsv.gz', sep='\t', compression='gzip')
+data_v1_X = pd.read_csv('data/Bayesian_phase2_L5_All_num_features.tsv.gz', sep='\t', compression='gzip')
 
 list_selected_labels_arr = {
         'MCF7': (98, 20),
@@ -42,9 +42,8 @@ list_selected_labels_arr = {
         'HT29': (28, 41),
         'VCAP': (26, 19),
         'PC3': (17, 31), 
-        'group1': (98, 20, 26, 19), 
-        'group2': (98, 20, 26, 19, 17, 31),
-        'group3': (49, 81, 14, 35, 10, 45, 15, 48, 28, 41, 98, 20, 17, 31, 19, 26), 
+        'three_cells': (98, 20, 26, 19, 17, 31),
+        'eight_cells': (49, 81, 14, 35, 10, 45, 15, 48, 28, 41, 98, 20, 17, 31, 19, 26), 
     }
 
 for cell, selected_labels_arr in list_selected_labels_arr.items():
@@ -56,12 +55,33 @@ for cell, selected_labels_arr in list_selected_labels_arr.items():
         train_index_dict[cell].append(train_index)
         test_index_dict[cell].append(test_index)
 
-def RandomForest_npz(cell, fold):
-    train = np.load(f"/root/data/RandomForest/output_RF/RandomForest_cv_{fold}_train_{cell}.npz")
-    test = np.load(f"/root/data/RandomForest/output_RF/RandomForest_cv_{fold}_test_{cell}.npz")
-    return [train['pred_rank'], train['pred_median']], [test['pred_rank'], test['pred_median']]
+def RandomForest_predict(cell, fold):
+
+    rfr_estimator = 2500
+    rfr_depth = 20
+    
+    RF_X_data = pd.read_csv('data/Bayesian_phase2_L5_All_num_features.tsv.gz', sep='\t', compression='gzip')
+    RF_y_data = pd.read_csv('data/Bayesian_all_phase2_L5_rank.tsv.gz', sep='\t', compression='gzip')
+
+    selected_labels_arr = list_selected_labels_arr[cell]
+    selected_labels = RF_X_data[RF_X_data['KNN_labels'].isin(selected_labels_arr)]['KNN_labels'].to_numpy()
+    
+    np_X = RF_X_data[RF_X_data['KNN_labels'].isin(selected_labels_arr)].drop(columns='KNN_labels').iloc[:, 6:].to_numpy()
+    np_y = RF_y_data[RF_y_data['KNN_labels'].isin(selected_labels_arr)].drop(columns='KNN_labels').iloc[:, 7:].to_numpy()
+
+    X_train, X_test = np_X[train_index_dict[cell][fold], :], np_X[test_index_dict[cell][fold], :]
+    train_y, test_y = np_y[train_index_dict[cell][fold], :], np_y[test_index_dict[cell][fold], :]
+
+    file_path = f"saved_model/RFR/RandomForest_cv_{fold}_{cell}.joblib.gz"
+    model_rf = joblib.load(file_path)
+    model_rf.set_params(verbose=0)
+    
+    train_pred_rank = model_rf.predict(X_train)
+    test_pred_rank = model_rf.predict(X_test)
+
+    return [train_y, train_pred_rank], [test_y, test_pred_rank]
                                                         
-def Transformer_pred(X, y, meta, loss_type, fold, batch_size):
+def Transformer_pred(X, y, meta, cell, loss_type, fold, batch_size):
     input_dim = X.shape[1:]
     output_dim = y.shape[1]
     meta_dim = meta.shape[1]
@@ -122,7 +142,7 @@ def Transformer_pred(X, y, meta, loss_type, fold, batch_size):
     
     return [train_y, train_pred_rank], [test_y, test_pred_rank]
 
-def LSTM_pred(X, y, meta, loss_type, fold, batch_size):
+def LSTM_pred(X, y, meta, cell, loss_type, fold, batch_size):
     input_dim = X.shape[1:]
     output_dim = y.shape[1]
     ntoken = input_dim[1]
@@ -199,13 +219,13 @@ def GTF_pred(drug_file, drug_id_file, gene_file, data_file,
     intitializer = torch.nn.init.xavier_uniform_
 
     graph_transformer = Graph_Transformer(drug_input_dim= data.drug_dim, gene_embed=data.gene, gene_input_dim=data.gene.size()[1],
-                    n_layers=n_layers, n_heads=n_heads, 
-                    encode_dim=512, fp_type=fp_type, loss_type=loss_type, label_type=label_type, device=device,
-                    initializer=intitializer, pert_type_input_dim=data.pert_type_dim, cell_id_input_dim=data.cell_id_dim,
-                    pert_idose_input_dim=data.pert_idose_dim, use_pert_type=data.use_pert_type,
-                    use_cell_id=data.use_cell_id, use_pert_idose=data.use_pert_idose)
+                                        n_layers=n_layers, n_heads=n_heads, 
+                                        encode_dim=512, fp_type=fp_type, loss_type=loss_type, label_type=label_type, device=device,
+                                        initializer=intitializer, pert_type_input_dim=data.pert_type_dim, cell_id_input_dim=data.cell_id_dim,
+                                        pert_idose_input_dim=data.pert_idose_dim, use_pert_type=data.use_pert_type,
+                                        use_cell_id=data.use_cell_id, use_pert_idose=data.use_pert_idose)
 
-    checkpoint = torch.load(f'saved_model/Graph_Transformer/Graph_Transformer_{loss_type}_real_{cell}_{fold}.ckpt')
+    checkpoint = torch.load(f'saved_model/Graph_Transformer/Transformer_{loss_type}_real_{cell}_{fold}.ckpt')
     graph_transformer.load_state_dict(checkpoint['model_state_dict'])
     graph_transformer.to(device)
     graph_transformer.eval()
@@ -314,10 +334,11 @@ def train(data_file, meta_file, target_file, gtf_drug_file, gtf_drug_id_file, gt
     real_train_y = y[train_index_dict[cell][fold]]
     real_test_y = y[test_index_dict[cell][fold]]
     
-    rpred_train, rpred_test = RandomForest_npz(cell, fold)
+    rpred_train, rpred_test = RandomForest_predict(cell, fold)
     tf_train, tf_test = Transformer_pred(X, y, meta, cell, 'list_wise_rankcosine', fold, batch_size)
     lstm_train, lstm_test = LSTM_pred(X, y, meta, cell, 'list_wise_rankcosine', fold, batch_size)
-    gtf_train, gtf_test = GTF_pred(gtf_drug_file, gtf_drug_id_file, gtf_gene_file, gtf_data_file, 'point_wise_mse', fold, batch_size, 2, 1)
+    gtf_train, gtf_test = GTF_pred(gtf_drug_file, gtf_drug_id_file, gtf_gene_file, gtf_data_file, cell, 
+                                   'point_wise_mse', fold, batch_size, 2, 1)
     
     print(f"CV\t{fold}\tCell\t{cell}\tTrain Shape\tRF : {rpred_train[0].shape}/ SMILES_Transformer : {tf_train[1].shape}/ SMILES_LSTM : {lstm_train[1].shape}/ Graph_Transformer : {gtf_train[1].shape}") 
     print(f"CV\t{fold}\tCell\t{cell}\tTest Shape\tRF : {rpred_test[0].shape}/ SMILES_Transformer : {tf_test[1].shape}/ SMILES_LSTM : {lstm_test[1].shape}/ Graph_Transformer : {gtf_test[1].shape}") 
@@ -404,7 +425,7 @@ if __name__=="__main__":
     gtf_drug_file = args.gtf_drug_file
     gtf_drug_id_file = args.gtf_drug_id_file
     gtf_gene_file = args.gtf_gene_file
-    gtf_data_file = args.gtf_data.file
+    gtf_data_file = args.gtf_data_file
 
     if model_name == 'Lasso':
         penalty = 'l2'
@@ -413,8 +434,7 @@ if __name__=="__main__":
     elif model_name == 'Elastic':
         penalty = 'l3'
 
-    fold_list = [0, 1, 2, 3, 4]
-    for fold in fold_list:
+    for fold in range(5):
         train(data_file, meta_file, target_file, 
               gtf_drug_file, gtf_drug_id_file, gtf_gene_file, gtf_data_file, 
-              cell, fold, batch_size, penalty, model_name)
+              cell_type, fold, batch_size, penalty, model_name)

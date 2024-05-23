@@ -177,7 +177,7 @@ class TotalPredict(object):
         temp_model = joblib.load(file_path)
         temp_model.set_params(verbose=0)
 
-        rf_rank, rf_median = temp_model.predict(mult_smile)
+        rf_rank = temp_model.predict(mult_smile)
 
         return rf_rank
 
@@ -195,7 +195,7 @@ class TotalPredict(object):
         encode_np = torch.tensor(self.encode_np, dtype=torch.int32).to(self.device)
         fp_np = torch.tensor(self.fp_np, dtype=torch.float32).to(self.device)
     
-        trans_rank, trans_median = model.predict(encode_np, fp_np)
+        trans_rank = model.predict(encode_np, fp_np)
     
         return trans_rank 
     
@@ -215,7 +215,7 @@ class TotalPredict(object):
 
         
         hidden = model.init_hidden(self.model_config['ntoken']) # batch_size but size error 
-        lstm_rank, lstm_median = model.predict(encode_np, fp_np, hidden)
+        lstm_rank = model.predict(encode_np, fp_np, hidden)
     
         return lstm_rank
     
@@ -242,7 +242,7 @@ class TotalPredict(object):
               use_cell_id=data.use_cell_id, 
               use_pert_idose=data.use_pert_idose)
         
-        checkpoint = torch.load(f"saved_model/Graph_Transformer/Graph_Transformer_{self.model_config['ciger_loss']}_real_{self.cell}_{fold}.ckpt")
+        checkpoint = torch.load(f"saved_model/Graph_Transformer/Transformer_{self.model_config['ciger_loss']}_real_{self.cell}_{fold}.ckpt")
         gtf.load_state_dict(checkpoint['model_state_dict'])
         gtf.to(device)
         gtf.eval()

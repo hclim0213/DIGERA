@@ -64,8 +64,8 @@ if __name__=="__main__":
                     encode_dim=512, fp_type=fp_type, loss_type=loss_type, label_type=label_type, device=device,
                     initializer=intitializer, pert_type_input_dim=data.pert_type_dim, cell_id_input_dim=data.cell_id_dim,
                     pert_idose_input_dim=data.pert_idose_dim, use_pert_type=data.use_pert_type,
-                    use_cell_id=data.use_cell_id, use_pert_idose=data.use_pert_idose)
-        checkpoint = torch.load('saved_model/graph_transformer/%s_%s_%d.ckpt' % (model_name + '_' + loss_type + '_' + label_type, \
+                    use_cell_id=data.use_cell_id, use_pert_idose=data.use_pert_idose, n_layers=2, n_heads=1)
+        checkpoint = torch.load('saved_model/Graph_Transformer/%s_%s_%d.ckpt' % (model_name + '_' + loss_type + '_' + label_type, \
                                                                     cell_type, fold),
                                 map_location=device)
         model.load_state_dict(checkpoint['model_state_dict'])
@@ -119,8 +119,8 @@ if __name__=="__main__":
         model = Graph_Transformer(drug_input_dim=data.drug_dim, gene_embed=data.gene, gene_input_dim=data.gene.size()[1],
                     encode_dim=512, fp_type=fp_type, loss_type=loss_type, label_type=label_type, device=device,
                     initializer=intitializer, pert_type_input_dim=data.pert_type_dim, cell_id_input_dim=data.cell_id_dim,
-                    pert_idose_input_dim=data.pert_idose_dim, use_pert_type=data.use_pert_type,
-                    use_cell_id=data.use_cell_id, use_pert_idose=data.use_pert_idose)
+                    pert_idose_input_dim=data.pert_idose_dim, use_pert_type=data.use_pert_type, 
+                    use_cell_id=data.use_cell_id, use_pert_idose=data.use_pert_idose, n_layers=2, n_heads=1)
 
         if warm_start:     
             checkpoint = torch.load('saved_model/Graph_Transformer/%s_%s_%d.ckpt' % (model_name + '_' + loss_type + '_' + label_type, \
@@ -214,7 +214,7 @@ if __name__=="__main__":
                     else:
                         pert_idose = None
                     gene = ft['gene']
-                    predict_rank, predict_median = model.predict(drug, gene, pert_type, cell_id, pert_idose)
+                    predict_rank = model.predict(drug, gene, pert_type, cell_id, pert_idose)
                     if label_type == 'binary' or label_type == 'real':
                         label = lb['binary']
                     elif label_type == 'binary_reverse' or label_type == 'real_reverse':
@@ -284,7 +284,7 @@ if __name__=="__main__":
                     else:
                         pert_idose = None
                     gene = ft['gene']
-                    predict_rank, predict_median = model.predict(drug, gene, pert_type, cell_id, pert_idose)
+                    predict_rank = model.predict(drug, gene, pert_type, cell_id, pert_idose)
                     if label_type == 'binary' or label_type == 'real':
                         label = lb['binary']
                     elif label_type == 'binary_reverse' or label_type == 'real_reverse':

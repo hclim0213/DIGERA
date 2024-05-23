@@ -28,7 +28,7 @@ class VotingRegression():
                       np.where(ranks_up <= 100, 0.3,
                       np.where(ranks_up <= 200, 0.4, 0.5))))))))))
         
-        return y_pred_rank, y_pred
+        return y_pred_rank
 
 from sklearn.model_selection import StratifiedKFold, train_test_split
 import numpy as np
@@ -88,12 +88,33 @@ for cell, selected_labels_arr in list_selected_labels_arr.items():
         train_index_dict[cell].append(train_index)
         test_index_dict[cell].append(test_index)
 
-def RandomForest_npz(cell, fold):
-    train = np.load(f"/root/data/RandomForest/output_RF/RandomForest_cv_{fold}_train_{cell}.npz")
-    test = np.load(f"/root/data/RandomForest/output_RF/RandomForest_cv_{fold}_test_{cell}.npz")
-    return [train['pred_rank'], train['pred_median']], [test['pred_rank'], test['pred_median']]
+def RandomForest_predict(cell, fold):
+
+    rfr_estimator = 2500
+    rfr_depth = 20
+    
+    RF_X_data = pd.read_csv('data/Bayesian_phase2_L5_All_num_features.tsv.gz', sep='\t', compression='gzip')
+    RF_y_data = pd.read_csv('data/Bayesian_all_phase2_L5_rank.tsv.gz', sep='\t', compression='gzip')
+
+    selected_labels_arr = list_selected_labels_arr[cell]
+    selected_labels = RF_X_data[RF_X_data['KNN_labels'].isin(selected_labels_arr)]['KNN_labels'].to_numpy()
+    
+    np_X = RF_X_data[RF_X_data['KNN_labels'].isin(selected_labels_arr)].drop(columns='KNN_labels').iloc[:, 6:].to_numpy()
+    np_y = RF_y_data[RF_y_data['KNN_labels'].isin(selected_labels_arr)].drop(columns='KNN_labels').iloc[:, 7:].to_numpy()
+
+    X_train, X_test = np_X[train_index_dict[cell][fold], :], np_X[test_index_dict[cell][fold], :]
+    train_y, test_y = np_y[train_index_dict[cell][fold], :], np_y[test_index_dict[cell][fold], :]
+
+    file_path = f"saved_model/RFR/RandomForest_cv_{fold}_{cell}.joblib.gz"
+    model_rf = joblib.load(file_path)
+    model_rf.set_params(verbose=0)
+    
+    train_pred_rank = model_rf.predict(X_train)
+    test_pred_rank = model_rf.predict(X_test)
+
+    return [train_y, train_pred_rank], [test_y, test_pred_rank]
                                                         
-def Transformer_pred(X, y, meta, loss_type, fold, batch_size):
+def Transformer_pred(X, y, meta, cell, loss_type, fold, batch_size):
     input_dim = X.shape[1:]
     output_dim = y1.shape[1]
     meta_dim = meta.shape[1]
@@ -391,8 +412,8 @@ if __name__ == "__main__":
             test_rank_stack = np.stack((rpred_test[0], tf_test[1], lstm_test[1], gtf_test[1]), axis=2)
             
             vlr = VotingRegression(type='mean')
-            pred_train_rank, pred_train_median = vlr.predict(train_rank_stack)
-            pred_test_rank, pred_test_median = vlr.predict(test_rank_stack)
+            pred_train_rank = vlr.predict(train_rank_stack)
+            pred_test_rank = vlr.predict(test_rank_stack)
 
             f1score = custom_score(real_train_y, pred_train_rank)
             print(f"CV\t{fold}\tCell\t{cell}\tTrain\tF1score\t{f1score}")

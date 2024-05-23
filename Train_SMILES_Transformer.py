@@ -52,7 +52,7 @@ if __name__=="__main__":
     meta_file = args.meta_file
     target_file = args.target_file 
 
-    model = 'SMILES_Transformer'
+    model = 'Transformer'
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     """
@@ -103,7 +103,7 @@ if __name__=="__main__":
             for batch in train_loader:
                 x = batch[0].to(device)
                 cond = batch[1].to(device)
-                y = batch[2].to(device) # y1 = rank, y2 = median
+                y = batch[2].to(device)
                 
                 optimizer.zero_grad()
                 output = model(x, cond)
@@ -126,11 +126,9 @@ if __name__=="__main__":
                                         
                     if iter_n == 0:
                         pred_rank_np = np.array(pred_rank)
-                        pred_median_np = np.array(pred_median)
                         true_y = y
                     else:
                         pred_rank_np = np.append(pred_rank_np, np.array(pred_rank), axis=0)
-                        pred_median_np = np.append(pred_median_np, np.array(pred_median), axis=0)
                         true_y = np.append(true_y, y, axis=0)
 
                     iter_n+=1

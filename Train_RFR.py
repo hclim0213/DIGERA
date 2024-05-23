@@ -87,6 +87,6 @@ if __name__=="__main__":
             print(selected_labels_arr, "\t", temp_rfr, "\t", "test_cv", n_iter, "\tCustom_topk_Up_Down_F1score\t", "\t".join(np.char.mod('%f', np.reshape(test_topk, -1)[40:45])))
             print('')
 
-            joblib.dump(model_rf, f"/root/data/RFR/RandomForest_cv_{i}_{cell}.joblib.gz", compress=('gzip', 3))
+            joblib.dump(model_rf, f"saved_model/RFR/RandomForest_cv_{i}_{cell}.joblib.gz", compress=('gzip', 3))
 
             n_iter = n_iter + 1

@@ -83,7 +83,7 @@ class Graph_Transformer(nn.Module):
     
     def predict(self, input_drug, input_gene, input_pert_type, input_cell_id, input_pert_idose):
         
-        y_pred = self.forward(input_drug, input_gene, input_pert_type, input_cell_id, input_pert_idose)
+        y_pred = self.forward(input_drug, input_gene, input_pert_type, input_cell_id, input_pert_idose).cpu().numpy()
         
         ranks_up = rankdata(y_pred, method='min', axis=1)
         ranks_down = rankdata(-y_pred, method='min', axis=1)

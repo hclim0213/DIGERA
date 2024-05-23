@@ -10,9 +10,7 @@ from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from torch.utils.data import dataset
 from scipy.stats import spearmanr, rankdata
 
-from .ltr_loss import point_wise_mse, list_wise_listnet, list_wise_listmle, pair_wise_ranknet, list_wise_rankcosine, \
-    list_wise_ndcg, point_wise_rmse
-
+from .ltr_loss import point_wise_mse, list_wise_rankcosine
 
 class PositionalEncoding(nn.Module):
 
@@ -95,21 +93,8 @@ class LSTMModel(nn.Module):
     def loss(self, label, predict):
         if self.loss_type == 'point_wise_mse':
             loss = point_wise_mse(label, predict)
-        elif self.loss_type == 'point_wise_rmse':
-            loss = point_wise_rmse(label, predict)
-        elif self.loss_type == 'pair_wise_ranknet':
-            loss = pair_wise_ranknet(label, predict, self.device)
-        elif self.loss_type == 'list_wise_listnet':
-            loss = list_wise_listnet(label, predict)
-        elif self.loss_type == 'list_wise_listmle':
-            loss = list_wise_listmle(label, predict, self.device)
         elif self.loss_type == 'list_wise_rankcosine':
             loss = list_wise_rankcosine(label, predict)
-        elif self.loss_type == 'list_wise_ndcg':
-            loss = list_wise_ndcg(label, predict)
-        elif self.loss_type == 'torch_mse':
-            loss_func = nn.MSELoss()
-            loss = loss_func(predict, label)
         else:
             raise ValueError('Unknown loss: %s' % self.loss_type)
         return loss
