@@ -41,4 +41,4 @@ To check out the latest DIGERA sources:
 
 How to Cite
 ----------
-To be announced.
+Hyein Cho, Kyoung Tai No, and Hocheol Lim. "Development of Drug-Induced Gene Expression Ranking Analysis (DIGERA) and Its Application to Virtual Screening for Poly (ADP-Ribose) Polymerase 1 Inhibitors"
